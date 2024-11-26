@@ -1,14 +1,14 @@
 from fastapi import APIRouter, Depends, status, HTTPException
 from sqlalchemy.orm import Session
-from app.backend.db_depends import get_db
+from backend.db_depends import get_db
 from typing import Annotated
 from sqlalchemy import select
-from sqlalchemy import update
+from sqlalchemy import update, delete
 
 
-from app.models import *
+from models import *
 from sqlalchemy import insert
-from app.schemas import CreateUser, UpdateUser
+from schemas import CreateUser, UpdateUser
 
 from slugify import slugify
 
@@ -19,8 +19,7 @@ async def create_user(db: Annotated[Session, Depends(get_db)], create_user:Creat
     db.execute(insert(User).values(username=create_user.username,
                                    firstname=create_user.firstname,
                                    lastname=create_user.lastname,
-                                   age=create_user.age,
-                                   slug=slugify(create_user.username)))
+                                   age=create_user.age))
     db.commit()
     return {
         'status_code': status.HTTP_201_CREATED,
@@ -58,8 +57,7 @@ async def update_user(db: Annotated[Session, Depends(get_db)], user_id: int, upd
     db.execute(update(User).where(User.id == user_id).values(
         firstname=update_user.firstname,
         lastname=update_user.lastname,
-        age=update_user.age,
-        slug=slugify(update_user.firstname)))
+        age=update_user.age))
 
     db.commit()
     return {
@@ -76,7 +74,7 @@ async def delete_user(db: Annotated[Session, Depends(get_db)], user_id: int):
             status_code=status.HTTP_404_NOT_FOUND,
             detail='There is no user found'
         )
-    db.execute(update(User).where(User.id == user_id).values(is_active=False))
+    db.execute(delete(User).where(User.id == user_id))
     db.commit()
     return {
         'status_code': status.HTTP_200_OK,
