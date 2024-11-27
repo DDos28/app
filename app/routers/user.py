@@ -27,8 +27,6 @@ async def create_user(db: Annotated[Session, Depends(get_db)], create_user:Creat
     }
 
 
-from sqlalchemy import select
-
 @router.get ('/')
 async def all_users (db: Annotated[Session, Depends(get_db)]):
     users = db.scalars(select(User).where(User.is_active == True)).all()
@@ -62,7 +60,7 @@ async def update_user(db: Annotated[Session, Depends(get_db)], user_id: int, upd
     db.commit()
     return {
         'status_code': status.HTTP_200_OK,
-        'transaction': 'Category update is successful'
+        'transaction': 'User update is successful'
     }
 
 
@@ -74,9 +72,21 @@ async def delete_user(db: Annotated[Session, Depends(get_db)], user_id: int):
             status_code=status.HTTP_404_NOT_FOUND,
             detail='There is no user found'
         )
+    db.execute(delete(Task).where(Task.user_id == user_id))
     db.execute(delete(User).where(User.id == user_id))
     db.commit()
     return {
         'status_code': status.HTTP_200_OK,
         'transaction': 'User delete is successful'
     }
+
+
+@router.get("/{user_id}/tasks")
+async def tasks_by_user_id(user_id: int, db: Annotated[Session, Depends(get_db)]):
+
+    tasks = db.execute(select(Task).where(Task.user_id == user_id)).scalars().all()
+
+    if not tasks:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"Задачи для пользователя с ID {user_id} не найдены.")
+
+    return tasks
